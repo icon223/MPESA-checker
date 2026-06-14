@@ -3,562 +3,330 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Safaricom One App Lite + Subscription Tracker</title>
+  <title>Expense Tracker & Refund Monitor</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     * { -webkit-tap-highlight-color: transparent; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; }
-    .saf-gradient { background: linear-gradient(135deg, #009639 0%, #00b34a 50%, #4CBB17 100%); }
-    .saf-bg { background: #009639; }
-    .saf-text { color: #009639; }
-    .saf-border { border-color: #009639; }
-    .accent-red { color: #E31B23; }
-    .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1116; color: #f5f7fb; }
+    .bg-gradient-main { background: radial-gradient(circle at 18% -8%, rgba(80, 102, 231, 0.12) 0%, transparent 34%), radial-gradient(circle at 78% 0%, rgba(72, 196, 134, 0.08) 0%, transparent 32%), linear-gradient(135deg, #111317 0%, #090b0f 55%, #12151a 100%); }
+    .glass-card { background: rgba(39, 43, 51, 0.86); backdrop-filter: blur(12px); border: 1px solid rgba(126, 137, 159, 0.32); }
+    .glass-card-soft { background: rgba(31, 35, 43, 0.86); border: 1px solid rgba(126, 137, 159, 0.2); }
+    .panel-strong { background: linear-gradient(145deg, rgba(43, 48, 57, 0.94), rgba(30, 34, 42, 0.94)); border: 1px solid rgba(126, 137, 159, 0.32); }
+    .btn-primary { background: linear-gradient(180deg, #5b6df0 0%, #4054d7 100%); }
+    .btn-primary:hover { background: linear-gradient(180deg, #6b7df5 0%, #5064e7 100%); }
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-    @keyframes countUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .anim-fade-in { animation: fadeIn 0.25s ease-out; }
     .anim-slide-up { animation: slideUp 0.3s ease-out; }
-    .anim-count { animation: countUp 0.4s ease-out; }
-    .pulse-dot { animation: pulse-dot 1.4s infinite; }
+    .modal-overlay { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+    input, select, textarea { background: rgba(20, 23, 29, 0.72) !important; border: 1px solid rgba(126, 137, 159, 0.3) !important; color: #f5f7fb !important; border-radius: 10px !important; }
+    input:focus, select:focus, textarea:focus { outline: none !important; border-color: #5b6df0 !important; box-shadow: 0 0 0 3px rgba(91, 109, 240, 0.2) !important; }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type="number"] { -moz-appearance: textfield; }
-    .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
-    .bottom-nav-btn { @apply flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl transition-all duration-200 relative; }
-    .bottom-nav-btn.active { @apply text-[#009639]; }
-    .bottom-nav-btn.active::after { content: ''; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); width: 24px; height: 3px; background: #009639; border-radius: 0 0 4px 4px; }
-    .progress-bar { height: 6px; border-radius: 999px; background: #e5e7eb; overflow: hidden; }
-    .progress-bar-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
-    .status-badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold; }
-    .sub-card { @apply rounded-xl border bg-white p-4 shadow-sm transition-all hover:shadow-md; }
+    .pill { border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.7rem; text-transform: uppercase; background: rgba(141, 150, 169, 0.16); color: #c5cad4; }
+    .pill-red { background: rgba(228, 103, 103, 0.16); color: #f19191; }
+    .pill-green { background: rgba(72, 196, 134, 0.16); color: #6ee3a1; }
+    .status-active { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.2rem 0.6rem; background: rgba(72, 196, 134, 0.22); color: #7ee6ac; font-size: 0.75rem; }
+    .status-inactive { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.2rem 0.6rem; background: rgba(141, 150, 169, 0.16); color: #c5cad4; font-size: 0.75rem; }
   </style>
 </head>
 <body>
 
-<div x-data="appState()" class="min-h-screen max-w-lg mx-auto relative" :class="{'overflow-hidden h-screen fixed inset-0': showModal || showPinModal || showReceipt || showSubModal}">
+<div x-data="appState()" class="min-h-screen bg-gradient-main" :class="{'overflow-hidden h-screen fixed inset-0': showAddSubModal || showIngestModal}">
 
-  <!-- ===== STICKY HEADER ===== -->
-  <header class="sticky top-0 z-40 saf-gradient text-white px-4 pt-3 pb-4 shadow-lg">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-          <i data-lucide="smartphone" class="w-5 h-5 text-white"></i>
+  <!-- ===== AUTH SCREEN ===== -->
+  <template x-if="!token">
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#5b6df0] to-[#4054d7] flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#5b6df0]/30">
+            <i data-lucide="wallet" class="w-7 h-7 text-white"></i>
+          </div>
+          <h1 class="text-2xl font-bold text-white">Expense Tracker</h1>
+          <p class="text-sm text-gray-400 mt-1">Track expenses, subscriptions & refunds</p>
         </div>
-        <div>
-          <div class="text-sm font-bold leading-tight">Safaricom</div>
-          <div class="text-[10px] text-white/80 font-medium -mt-0.5">One App Lite</div>
+
+        <div class="panel-strong rounded-xl p-6 shadow-xl">
+          <template x-if="authTab === 'login'">
+            <div class="space-y-4">
+              <h2 class="text-lg font-bold text-center text-white">Welcome Back</h2>
+              <p class="text-xs text-gray-400 text-center -mt-2">Sign in to your account</p>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Username</label><input type="text" x-model="authForm.username" placeholder="Enter username" class="w-full px-4 py-2.5 text-sm"></div>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Password</label><input type="password" x-model="authForm.password" placeholder="Enter password" class="w-full px-4 py-2.5 text-sm"></div>
+              <div x-show="authError" class="text-xs text-red-400 bg-red-500/10 rounded-lg px-3 py-2" x-text="authError"></div>
+              <button @click="login" :disabled="!authForm.username || !authForm.password" class="w-full py-2.5 rounded-xl text-sm font-bold text-white btn-primary transition disabled:opacity-40">Sign In</button>
+              <p class="text-xs text-gray-500 text-center">Don't have an account? <button @click="authTab = 'register'; authError = ''" class="text-[#5b6df0] font-semibold hover:underline">Create one</button></p>
+              <p class="text-[10px] text-gray-600 text-center">Demo: <span class="font-mono text-gray-500">demo / demo123</span></p>
+            </div>
+          </template>
+          <template x-if="authTab === 'register'">
+            <div class="space-y-4">
+              <h2 class="text-lg font-bold text-center text-white">Get Started</h2>
+              <p class="text-xs text-gray-400 text-center -mt-2">Create a new account</p>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Username</label><input type="text" x-model="authForm.username" placeholder="Choose a username" class="w-full px-4 py-2.5 text-sm"></div>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Password</label><input type="password" x-model="authForm.password" placeholder="Choose a password (6+ chars)" class="w-full px-4 py-2.5 text-sm"></div>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Confirm Password</label><input type="password" x-model="authForm.confirm" placeholder="Confirm password" class="w-full px-4 py-2.5 text-sm"></div>
+              <div x-show="authError" class="text-xs text-red-400 bg-red-500/10 rounded-lg px-3 py-2" x-text="authError"></div>
+              <button @click="register" :disabled="!authForm.username || !authForm.password || !authForm.confirm" class="w-full py-2.5 rounded-xl text-sm font-bold text-white btn-primary transition disabled:opacity-40">Create Account</button>
+              <p class="text-xs text-gray-500 text-center">Already have an account? <button @click="authTab = 'login'; authError = ''" class="text-[#5b6df0] font-semibold hover:underline">Sign in</button></p>
+            </div>
+          </template>
         </div>
-      </div>
-      <div class="flex items-center gap-4">
-        <button class="relative p-1.5">
-          <i data-lucide="bell" class="w-5 h-5 text-white"></i>
-          <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-[#E31B23] rounded-full border-2 border-[#009639] pulse-dot"></span>
-        </button>
-        <button class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
-          <i data-lucide="user" class="w-4.5 h-4.5 text-white"></i>
-        </button>
       </div>
     </div>
-  </header>
+  </template>
 
-  <!-- ===== MAIN CONTENT ===== -->
-  <main class="px-4 pb-28 space-y-4 -mt-2 hide-scrollbar">
+  <!-- ===== DASHBOARD ===== -->
+  <template x-if="token">
+    <div class="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
 
-    <!-- ============================ -->
-    <!-- TAB 1: QUICK ACTIONS         -->
-    <!-- ============================ -->
-    <template x-if="activeTab === 'actions'">
-      <div class="space-y-4">
-
-        <!-- Balance Hero Card -->
-        <div class="saf-gradient rounded-2xl p-5 text-white shadow-xl relative overflow-hidden anim-slide-up">
-          <div class="absolute -top-8 -right-8 w-32 h-32 bg-white/5 rounded-full"></div>
-          <div class="absolute -bottom-6 -left-6 w-28 h-28 bg-white/5 rounded-full"></div>
-          <div class="absolute top-12 left-12 w-20 h-20 bg-white/[0.03] rounded-full"></div>
-          <div class="relative z-10">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-white/80 text-xs font-medium uppercase tracking-wide">M-PESA Balance</span>
-              <button @click="showBalance = !showBalance" class="text-white/70 hover:text-white transition">
-                <i :data-lucide="showBalance ? 'eye-off' : 'eye'" class="w-4.5 h-4.5"></i>
-              </button>
-            </div>
-            <div class="text-3xl font-bold tracking-tight mb-4 anim-count" x-text="showBalance ? 'KES ' + mpesaBalance.toLocaleString() : 'KES ****'"></div>
-            <div class="grid grid-cols-3 gap-3">
-              <div class="bg-white/15 rounded-xl p-2.5 text-center">
-                <div class="text-[10px] text-white/70 font-medium">Airtime</div>
-                <div class="text-sm font-bold" x-text="'KES ' + airtimeBalance"></div>
-              </div>
-              <div class="bg-white/15 rounded-xl p-2.5 text-center">
-                <div class="text-[10px] text-white/70 font-medium">Data</div>
-                <div class="text-sm font-bold" x-text="dataBalance + ' GB'"></div>
-              </div>
-              <div class="bg-white/15 rounded-xl p-2.5 text-center">
-                <div class="text-[10px] text-white/70 font-medium">Bonga</div>
-                <div class="text-sm font-bold" x-text="bongaPoints + ' pts'"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions Grid -->
+      <!-- Header -->
+      <div class="flex items-center justify-between mb-4 sm:mb-6">
         <div>
-          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5 px-0.5">Quick Actions</div>
-          <div class="grid grid-cols-2 gap-3">
-            <template x-for="action in quickActions" :key="action.id">
-              <button @click="openModal(action.id)" 
-                class="glass-card border border-gray-100 rounded-2xl p-4 text-left shadow-sm hover:shadow-md transition-all active:scale-[0.97]">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-3" :style="'background:' + action.bg">
-                  <i :data-lucide="action.icon" class="w-5.5 h-5.5" :style="'color:' + action.color"></i>
-                </div>
-                <div class="font-semibold text-gray-800 text-sm leading-tight" x-text="action.label"></div>
-                <div class="text-[11px] text-gray-400 mt-0.5" x-text="action.sub"></div>
-              </button>
-            </template>
-          </div>
+          <h1 class="text-lg sm:text-2xl font-bold text-white tracking-tight">Expense Tracker</h1>
+          <p class="text-xs sm:text-sm text-gray-400">Signed in as <span class="text-gray-300 font-semibold" x-text="username"></span></p>
         </div>
-
-        <!-- Recent Activity -->
-        <div>
-          <div class="flex items-center justify-between mb-2.5 px-0.5">
-            <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Recent Activity</div>
-          </div>
-          <div class="space-y-2">
-            <template x-for="txn in recentTransactions" :key="txn.id">
-              <div class="glass-card border border-gray-100 rounded-xl px-4 py-3 flex items-center gap-3 shadow-sm">
-                <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0" :class="txn.type === 'send' ? 'bg-red-50' : txn.type === 'receive' ? 'bg-green-50' : 'bg-blue-50'">
-                  <i :data-lucide="txn.icon" class="w-4.5 h-4.5" :class="txn.type === 'send' ? 'text-red-500' : txn.type === 'receive' ? 'text-green-600' : 'text-blue-600'"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-sm font-semibold text-gray-800 truncate" x-text="txn.title"></div>
-                  <div class="text-[11px] text-gray-400" x-text="txn.date"></div>
-                </div>
-                <div class="text-right shrink-0">
-                  <div class="text-sm font-bold" :class="txn.type === 'send' ? 'text-red-500' : 'text-green-600'" x-text="(txn.type === 'send' ? '-KES ' : '+KES ') + txn.amount.toLocaleString()"></div>
-                  <div class="text-[10px] text-gray-400 capitalize" x-text="txn.status"></div>
-                </div>
-              </div>
-            </template>
-          </div>
+        <div class="flex items-center gap-3">
+          <button @click="refreshData" class="p-2 rounded-lg glass-card hover:bg-white/5 transition" title="Refresh">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-gray-400" :class="{'animate-spin': loading}"></i>
+          </button>
+          <button @click="logout" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-400 border border-red-500/30 hover:bg-red-500/10 transition">Sign Out</button>
         </div>
-
       </div>
-    </template>
 
-    <!-- ============================ -->
-    <!-- TAB 2: SUBSCRIPTION TRACKER  -->
-    <!-- ============================ -->
-    <template x-if="activeTab === 'subscriptions'">
-      <div class="space-y-4 pt-1">
+      <!-- Error Banner -->
+      <div x-show="apiError" class="glass-card border border-red-500/30 rounded-xl px-4 py-3 mb-4 flex items-start gap-3">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5"></i>
+        <div class="text-xs text-red-300 flex-1" x-text="apiError"></div>
+        <button @click="apiError = ''" class="text-red-400 hover:text-red-300"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
 
-        <!-- Total Monthly Commitment -->
-        <div class="rounded-2xl p-5 text-white shadow-xl relative overflow-hidden anim-slide-up" style="background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);">
-          <div class="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full"></div>
-          <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full"></div>
-          <div class="relative z-10">
-            <div class="text-white/70 text-[10px] font-semibold uppercase tracking-wider mb-0.5">Total Monthly Recurring</div>
-            <div class="text-3xl font-bold tracking-tight" x-text="'KES ' + monthlyCommitment.toLocaleString()"></div>
-            <div class="flex items-center gap-3 mt-3">
-              <div class="bg-white/15 rounded-lg px-3 py-1.5 text-center">
-                <div class="text-[10px] text-white/70">Active Subs</div>
-                <div class="text-sm font-bold" x-text="activeSubCount"></div>
-              </div>
-              <div class="bg-white/15 rounded-lg px-3 py-1.5 text-center">
-                <div class="text-[10px] text-white/70">Due This Week</div>
-                <div class="text-sm font-bold" x-text="dueThisWeek"></div>
-              </div>
-              <div class="bg-white/15 rounded-lg px-3 py-1.5 text-center">
-                <div class="text-[10px] text-white/70">Avg / Sub</div>
-                <div class="text-sm font-bold" x-text="'KES ' + avgPerSub"></div>
-              </div>
+      <!-- Summary Metrics -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <div class="glass-card rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-xs text-gray-400"><span>Transactions</span><span class="pill">Total</span></div>
+          <div class="text-xl sm:text-2xl font-semibold text-white mt-1" x-text="summary.transaction_count">—</div>
+        </div>
+        <div class="glass-card rounded-xl p-3 sm:p-4" style="border-bottom-color: rgba(228, 103, 103, 0.5); box-shadow: inset 0 -3px 0 rgba(228, 103, 103, 0.5);">
+          <div class="flex items-center justify-between text-xs text-gray-400"><span>Debits</span><span class="pill pill-red">Debits</span></div>
+          <div class="text-xl sm:text-2xl font-semibold text-white mt-1" x-text="'KES ' + formatNum(summary.total_debits)">—</div>
+        </div>
+        <div class="glass-card rounded-xl p-3 sm:p-4" style="border-bottom-color: rgba(72, 196, 134, 0.5); box-shadow: inset 0 -3px 0 rgba(72, 196, 134, 0.5);">
+          <div class="flex items-center justify-between text-xs text-gray-400"><span>Credits</span><span class="pill pill-green">Credits</span></div>
+          <div class="text-xl sm:text-2xl font-semibold text-white mt-1" x-text="'KES ' + formatNum(summary.total_credits)">—</div>
+        </div>
+        <div class="glass-card rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-xs text-gray-400"><span>Pending Refunds</span></div>
+          <div class="text-xl sm:text-2xl font-semibold text-white mt-1" x-text="summary.pending_refunds">—</div>
+        </div>
+        <div class="glass-card rounded-xl p-3 sm:p-4">
+          <div class="flex items-center justify-between text-xs text-gray-400"><span>30-Day Runway</span><span class="pill pill-green">Runway</span></div>
+          <div class="text-xl sm:text-2xl font-semibold text-white mt-1" x-text="'KES ' + formatNum(summary.next_30_day_subscription_total)">—</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-1 mb-4 border-b border-white/10 overflow-x-auto hide-scrollbar">
+        <template x-for="tab in tabs" :key="tab.id">
+          <button @click="activeTab = tab.id" class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition border-b-2 -mb-px" :class="activeTab === tab.id ? 'text-[#5b6df0] border-[#5b6df0]' : 'text-gray-500 border-transparent hover:text-gray-300'"><span x-text="tab.label"></span></button>
+        </template>
+      </div>
+
+      <!-- ===== TAB: Transactions ===== -->
+      <template x-if="activeTab === 'transactions'">
+        <div class="space-y-4">
+          <div class="flex flex-wrap gap-2">
+            <input type="text" x-model="txnSearch" placeholder="Search merchant or reference..." class="flex-1 min-w-[180px] px-3 py-2 text-xs">
+            <select x-model="txnDirection" class="px-3 py-2 text-xs min-w-[100px]"><option value="">All directions</option><option value="debit">Debit</option><option value="credit">Credit</option></select>
+            <select x-model="txnStatus" class="px-3 py-2 text-xs min-w-[100px]"><option value="">All statuses</option><option value="completed">Completed</option><option value="pending">Pending</option><option value="refund_initiated">Refund Initiated</option></select>
+          </div>
+          <div class="glass-card-soft rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs sm:text-sm">
+                <thead><tr class="text-gray-400 border-b border-white/5">
+                  <th class="text-left px-3 py-2.5 font-medium">Date</th>
+                  <th class="text-left px-3 py-2.5 font-medium">Merchant</th>
+                  <th class="text-right px-3 py-2.5 font-medium">Amount</th>
+                  <th class="text-center px-3 py-2.5 font-medium">Direction</th>
+                  <th class="text-center px-3 py-2.5 font-medium">Status</th>
+                  <th class="text-left px-3 py-2.5 font-medium hidden sm:table-cell">Reference</th>
+                  <th class="text-center px-3 py-2.5 font-medium">Action</th>
+                </tr></thead>
+                <tbody>
+                  <template x-for="txn in filteredTransactions" :key="txn.id">
+                    <tr class="border-b border-white/5 hover:bg-white/[0.02] transition">
+                      <td class="px-3 py-2.5 text-gray-300 whitespace-nowrap" x-text="txn.transaction_date"></td>
+                      <td class="px-3 py-2.5 text-white font-medium" x-text="txn.merchant"></td>
+                      <td class="px-3 py-2.5 text-right font-semibold" :class="txn.direction === 'debit' ? 'text-red-400' : 'text-green-400'" x-text="txn.currency + ' ' + formatNum(txn.amount)"></td>
+                      <td class="px-3 py-2.5 text-center"><span class="pill" :class="txn.direction === 'debit' ? 'pill-red' : 'pill-green'" x-text="txn.direction"></span></td>
+                      <td class="px-3 py-2.5 text-center"><span class="text-xs" :class="txn.status === 'completed' ? 'text-green-400' : txn.status === 'refund_initiated' ? 'text-amber-400' : 'text-gray-400'" x-text="txn.status"></span></td>
+                      <td class="px-3 py-2.5 text-gray-400 font-mono text-[10px] hidden sm:table-cell max-w-[120px] truncate" x-text="txn.reference || '—'"></td>
+                      <td class="px-3 py-2.5 text-center">
+                        <button x-show="txn.direction === 'debit' && txn.status !== 'refund_initiated'" @click="markRefund(txn.id)" class="text-[10px] font-semibold text-amber-400 hover:text-amber-300 transition">Refund</button>
+                        <span x-show="txn.direction !== 'debit' || txn.status === 'refund_initiated'" class="text-[10px] text-gray-500">—</span>
+                      </td>
+                    </tr>
+                  </template>
+                  <tr x-show="filteredTransactions.length === 0"><td colspan="7" class="px-3 py-8 text-center text-gray-500 text-sm">No transactions found</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
+      </template>
 
-        <!-- Alert Banner -->
-        <div class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
-          <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-500 shrink-0 mt-0.5"></i>
-          <div class="text-xs text-amber-800">
-            <span class="font-semibold">Upcoming:</span> <span x-text="nextDueName"></span> renews in <span class="font-bold" x-text="nextDueDays"></span> days — <span x-text="'KES ' + nextDueAmount.toLocaleString()"></span>
-          </div>
-        </div>
-
-        <!-- Subscriptions List -->
-        <div>
-          <div class="flex items-center justify-between mb-2.5 px-0.5">
-            <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Your Subscriptions</div>
-            <button @click="openSubModal" class="text-xs font-bold text-[#009639] flex items-center gap-1">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add New
-            </button>
-          </div>
-          <div class="space-y-3">
-            <template x-for="sub in subscriptions" :key="sub.id">
-              <div class="sub-card relative overflow-hidden" :class="sub.status === 'due_soon' ? 'border-amber-200' : sub.status === 'paused' ? 'border-gray-200 opacity-70' : 'border-gray-100'">
-                <!-- Status bar -->
-                <div class="absolute top-0 left-0 right-0 h-1" :class="sub.status === 'active' ? 'bg-[#009639]' : sub.status === 'due_soon' ? 'bg-amber-400' : 'bg-gray-300'"></div>
-                <div class="flex items-start justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold" :style="'background:' + sub.bg" :style="'color:' + sub.color" x-text="sub.icon"></div>
-                    <div>
-                      <div class="text-sm font-bold text-gray-800" x-text="sub.name"></div>
-                      <div class="text-[11px] text-gray-400" x-text="'KES ' + sub.amount.toLocaleString() + '/mo ' + (sub.category ? '· ' + sub.category : '')"></div>
+      <!-- ===== TAB: Subscriptions ===== -->
+      <template x-if="activeTab === 'subscriptions'">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white">Active Subscriptions</h3>
+              <button @click="showAddSubModal = true" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white btn-primary transition">+ Add</button>
+            </div>
+            <template x-if="runway.length === 0 && subscriptions.length === 0">
+              <div class="glass-card-soft rounded-xl p-6 text-center">
+                <i data-lucide="credit-card" class="w-8 h-8 text-gray-500 mx-auto mb-2"></i>
+                <p class="text-sm text-gray-400">No subscriptions yet. Add one to start tracking.</p>
+              </div>
+            </template>
+            <div class="space-y-2">
+              <template x-for="sub in subscriptions" :key="sub.id">
+                <div class="glass-card rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0" :style="'background: ' + (sub.active ? 'rgba(72,196,134,0.15)' : 'rgba(141,150,169,0.15)')" :class="sub.active ? 'text-green-400' : 'text-gray-500'"><span x-text="sub.name.substring(0,2).toUpperCase()"></span></div>
+                    <div class="min-w-0">
+                      <div class="text-sm font-semibold text-white truncate" x-text="sub.name"></div>
+                      <div class="text-xs text-gray-400">Billing day: <span class="text-gray-300" x-text="ordinal(sub.billing_day)"></span></div>
                     </div>
                   </div>
-                  <div>
-                    <span class="status-badge" :class="sub.status === 'active' ? 'bg-green-50 text-green-700' : sub.status === 'due_soon' ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'">
-                      <span class="w-1.5 h-1.5 rounded-full" :class="sub.status === 'active' ? 'bg-green-500' : sub.status === 'due_soon' ? 'bg-amber-500' : 'bg-gray-400'"></span>
-                      <span x-text="sub.status === 'active' ? 'Active' : sub.status === 'due_soon' ? 'Due Soon' : 'Paused'"></span>
-                    </span>
+                  <div class="text-right shrink-0 ml-3">
+                    <div class="text-sm font-bold text-white" x-text="sub.currency + ' ' + formatNum(sub.amount)"></div>
+                    <span class="text-xs" :class="sub.active ? 'status-active' : 'status-inactive'" x-text="sub.active ? 'Active' : 'Paused'"></span>
                   </div>
                 </div>
-                <!-- Progress Bar -->
-                <div class="mt-3">
-                  <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                    <span x-text="sub.daysLeft + ' days left'"></span>
-                    <span>Next: <span x-text="sub.nextDate"></span></span>
+              </template>
+            </div>
+            <template x-if="runway.length > 0">
+              <div>
+                <h3 class="text-sm font-bold text-white mb-2 mt-4">Due in Next 30 Days</h3>
+                <div class="space-y-2">
+                  <template x-for="item in runway" :key="item.id">
+                    <div class="glass-card rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between border-l-2 border-l-[#5b6df0]">
+                      <div>
+                        <div class="text-sm font-semibold text-white" x-text="item.name"></div>
+                        <div class="text-xs text-gray-400">Due <span class="text-gray-300" x-text="item.due_date"></span></div>
+                      </div>
+                      <div class="text-right">
+                        <div class="text-sm font-bold text-white" x-text="item.currency + ' ' + formatNum(item.amount)"></div>
+                        <div class="text-[10px] text-gray-500" x-text="'~KES ' + formatNum(item.estimated_local_amount)"></div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+          <div class="glass-card rounded-xl p-4 h-fit">
+            <h3 class="text-sm font-bold text-white mb-3">Add Subscription</h3>
+            <form @submit.prevent="addSubscription" class="space-y-3">
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Name</label><input type="text" x-model="subForm.name" placeholder="e.g. Netflix" class="w-full px-3 py-2 text-sm"></div>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Amount</label><input type="number" x-model="subForm.amount" placeholder="0.00" min="0" step="0.01" class="w-full px-3 py-2 text-sm"></div>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Currency</label><select x-model="subForm.currency" class="w-full px-3 py-2 text-sm"><option value="KES">KES</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select></div>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">Billing Day (1-31)</label><input type="number" x-model="subForm.billing_day" min="1" max="31" class="w-full px-3 py-2 text-sm"></div>
+              <div><label class="text-xs font-medium text-gray-400 block mb-1">FX Rate to KES</label><input type="number" x-model="subForm.fx_rate" value="1" min="0" step="0.01" class="w-full px-3 py-2 text-sm"></div>
+              <button type="submit" :disabled="!subForm.name || !subForm.amount" class="w-full py-2.5 rounded-xl text-sm font-bold text-white btn-primary transition disabled:opacity-40">Add Subscription</button>
+            </form>
+          </div>
+        </div>
+      </template>
+
+      <!-- ===== TAB: Refunds ===== -->
+      <template x-if="activeTab === 'refunds'">
+        <div class="space-y-4">
+          <h3 class="text-sm font-bold text-white">Refund Watchlist</h3>
+          <template x-if="refunds.length === 0">
+            <div class="glass-card-soft rounded-xl p-6 text-center">
+              <i data-lucide="rotate-ccw" class="w-8 h-8 text-gray-500 mx-auto mb-2"></i>
+              <p class="text-sm text-gray-400">No refund items being tracked.</p>
+            </div>
+          </template>
+          <div class="space-y-2">
+            <template x-for="refund in refunds" :key="refund.id">
+              <div class="glass-card rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/10 shrink-0"><i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-400"></i></div>
+                  <div class="min-w-0">
+                    <div class="text-sm font-semibold text-white truncate" x-text="refund.merchant"></div>
+                    <div class="text-xs text-gray-400" x-text="refund.currency + ' ' + formatNum(refund.amount) + ' — ' + (refund.status || 'pending')"></div>
                   </div>
-                  <div class="progress-bar">
-                    <div class="progress-bar-fill" :class="sub.status === 'active' ? 'bg-[#009639]' : sub.status === 'due_soon' ? 'bg-amber-400' : 'bg-gray-300'" :style="'width:' + sub.progress + '%'"></div>
-                  </div>
+                </div>
+                <div class="text-right shrink-0 ml-3">
+                  <span class="text-xs" :class="refund.status === 'settled' ? 'status-active' : 'text-amber-400 font-semibold'" x-text="refund.status"></span>
+                  <div x-show="refund.expected_by" class="text-[10px] text-gray-500 mt-0.5">Expected by <span x-text="refund.expected_by"></span></div>
                 </div>
               </div>
             </template>
           </div>
         </div>
+      </template>
 
-        <!-- Refund / Renewal Notes -->
-        <div class="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start gap-3">
-          <i data-lucide="info" class="w-5 h-5 text-blue-500 shrink-0 mt-0.5"></i>
-          <div class="text-xs text-blue-800">
-            <span class="font-semibold">Refund Tracked:</span> KES 450 refund for <span class="font-semibold">YouTube Premium</span> is being processed. Expected settlement within 3-7 days.
+      <!-- ===== TAB: Parse Alert ===== -->
+      <template x-if="activeTab === 'parse'">
+        <div class="max-w-2xl space-y-4">
+          <h3 class="text-sm font-bold text-white">Preview Alert Parsing</h3>
+          <p class="text-xs text-gray-400">Paste an M-PESA SMS or email alert to see how it will be parsed before saving.</p>
+          <textarea x-model="parseText" placeholder="Paste raw alert text here..." class="w-full px-4 py-3 text-sm rounded-xl" rows="5"></textarea>
+          <button @click="previewParse" :disabled="!parseText.trim()" class="px-5 py-2.5 rounded-xl text-sm font-bold text-white btn-primary transition disabled:opacity-40">Preview Parse</button>
+          <div x-show="parseResult" class="glass-card rounded-xl p-4">
+            <pre class="text-xs text-gray-300 overflow-x-auto" x-text="JSON.stringify(parseResult, null, 2)"></pre>
           </div>
+          <div x-show="parseError" class="text-xs text-red-400 bg-red-500/10 rounded-lg px-3 py-2" x-text="parseError"></div>
         </div>
+      </template>
 
-      </div>
-    </template>
-
-  </main>
-
-  <!-- ===== BOTTOM NAVIGATION ===== -->
-  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-2xl" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
-    <div class="max-w-lg mx-auto flex items-center justify-around px-4 py-1.5">
-      <button @click="activeTab = 'actions'" class="bottom-nav-btn" :class="activeTab === 'actions' ? 'active' : 'text-gray-400'">
-        <i data-lucide="home" class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Quick Actions</span>
-      </button>
-      <button @click="activeTab = 'subscriptions'" class="bottom-nav-btn" :class="activeTab === 'subscriptions' ? 'active' : 'text-gray-400'">
-        <i data-lucide="credit-card" class="w-5 h-5"></i>
-        <span class="text-[10px] font-semibold">Subscriptions</span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- ===== ACTION MODALS ===== -->
-  <template x-if="showModal">
-    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-overlay" @click.self="closeModal">
-      <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl anim-slide-up" @click.stop>
-        <div class="sticky top-0 bg-white z-10 flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" :style="'background:' + currentAction.bg">
-              <i :data-lucide="currentAction.icon" class="w-5 h-5" :style="'color:' + currentAction.color"></i>
-            </div>
-            <div>
-              <div class="font-bold text-gray-800 text-sm" x-text="currentAction.label"></div>
-              <div class="text-[10px] text-gray-400" x-text="currentAction.sub"></div>
-            </div>
-          </div>
-          <button @click="closeModal" class="p-1.5 hover:bg-gray-100 rounded-full transition">
-            <i data-lucide="x" class="w-5 h-5 text-gray-400"></i>
+      <!-- ===== TAB: Ingest Alert ===== -->
+      <template x-if="activeTab === 'ingest'">
+        <div class="max-w-2xl space-y-4">
+          <h3 class="text-sm font-bold text-white">Ingest Alert</h3>
+          <p class="text-xs text-gray-400">Paste an M-PESA SMS or email alert to parse and save it to the transaction log.</p>
+          <textarea x-model="ingestText" placeholder="Paste raw alert text here..." class="w-full px-4 py-3 text-sm rounded-xl" rows="5"></textarea>
+          <button @click="ingestAlert" :disabled="!ingestText.trim() || ingesting" class="px-5 py-2.5 rounded-xl text-sm font-bold text-white btn-primary transition disabled:opacity-40">
+            <span x-text="ingesting ? 'Saving...' : 'Parse & Save'"></span>
           </button>
+          <div x-show="ingestResult" class="glass-card rounded-xl p-4">
+            <div class="flex items-center gap-2 text-green-400 text-sm font-semibold mb-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Saved successfully</div>
+            <pre class="text-xs text-gray-300 overflow-x-auto" x-text="JSON.stringify(ingestResult, null, 2)"></pre>
+          </div>
+          <div x-show="ingestError" class="text-xs text-red-400 bg-red-500/10 rounded-lg px-3 py-2" x-text="ingestError"></div>
         </div>
-        <div class="p-5 space-y-4">
+      </template>
 
-          <!-- Send Money -->
-          <template x-if="modalType === 'send'">
-            <div class="space-y-4">
-              <div>
-                <label class="text-xs font-semibold text-gray-500 block mb-1.5">To (Phone Number)</label>
-                <div class="relative">
-                  <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">+254</span>
-                  <input type="tel" x-model="sendForm.phone" placeholder="712 345 678" maxlength="9"
-                    class="w-full pl-14 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-                </div>
-              </div>
-              <div>
-                <label class="text-xs font-semibold text-gray-500 block mb-1.5">Amount (KES)</label>
-                <input type="number" x-model="sendForm.amount" placeholder="0.00" min="1"
-                  class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-              </div>
-              <div class="flex gap-2">
-                <template x-for="amt in [50, 100, 500, 1000]" :key="amt">
-                  <button @click="sendForm.amount = amt" 
-                    class="flex-1 py-2.5 rounded-xl text-xs font-semibold border transition"
-                    :class="sendForm.amount == amt ? 'bg-[#009639] text-white border-[#009639]' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'">
-                    KES <span x-text="amt.toLocaleString()"></span>
-                  </button>
-                </template>
-              </div>
-              <button @click="confirmSend" :disabled="!sendForm.phone || !sendForm.amount"
-                class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition disabled:opacity-40"
-                :class="sendForm.phone && sendForm.amount ? 'saf-gradient hover:shadow-lg active:scale-[0.98]' : 'bg-gray-300'">
-                Send KES <span x-text="Number(sendForm.amount).toLocaleString()"></span>
-              </button>
-            </div>
-          </template>
-
-          <!-- Lipa Na M-PESA -->
-          <template x-if="modalType === 'lipa'">
-            <div class="space-y-4">
-              <div class="flex bg-gray-100 rounded-xl p-1">
-                <button @click="lipaTab = 'till'" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition"
-                  :class="lipaTab === 'till' ? 'bg-white text-[#009639] shadow-sm' : 'text-gray-500'">Buy Goods & Services</button>
-                <button @click="lipaTab = 'paybill'" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition"
-                  :class="lipaTab === 'paybill' ? 'bg-white text-[#009639] shadow-sm' : 'text-gray-500'">Paybill</button>
-              </div>
-              <template x-if="lipaTab === 'till'">
-                <div class="space-y-4">
-                  <div>
-                    <label class="text-xs font-semibold text-gray-500 block mb-1.5">Till Number</label>
-                    <input type="tel" x-model="lipaForm.till" placeholder="e.g. 987654" maxlength="7"
-                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-                  </div>
-                  <div>
-                    <label class="text-xs font-semibold text-gray-500 block mb-1.5">Amount (KES)</label>
-                    <input type="number" x-model="lipaForm.amount" placeholder="0.00" min="1"
-                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-                  </div>
-                </div>
-              </template>
-              <template x-if="lipaTab === 'paybill'">
-                <div class="space-y-4">
-                  <div>
-                    <label class="text-xs font-semibold text-gray-500 block mb-1.5">Business Number</label>
-                    <input type="tel" x-model="lipaForm.paybill" placeholder="e.g. 247247" maxlength="7"
-                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-                  </div>
-                  <div>
-                    <label class="text-xs font-semibold text-gray-500 block mb-1.5">Account Number (Optional)</label>
-                    <input type="text" x-model="lipaForm.account" placeholder="e.g. 1234567890"
-                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-                  </div>
-                  <div>
-                    <label class="text-xs font-semibold text-gray-500 block mb-1.5">Amount (KES)</label>
-                    <input type="number" x-model="lipaForm.amount" placeholder="0.00" min="1"
-                      class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-                  </div>
-                </div>
-              </template>
-              <button @click="confirmLipa" :disabled="!lipaForm.amount || (lipaTab === 'till' && !lipaForm.till) || (lipaTab === 'paybill' && !lipaForm.paybill)"
-                class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition disabled:opacity-40"
-                :class="lipaForm.amount && ((lipaTab === 'till' && lipaForm.till) || (lipaTab === 'paybill' && lipaForm.paybill)) ? 'saf-gradient hover:shadow-lg active:scale-[0.98]' : 'bg-gray-300'">
-                Pay KES <span x-text="Number(lipaForm.amount).toLocaleString()"></span>
-              </button>
-            </div>
-          </template>
-
-          <!-- Buy Bundles -->
-          <template x-if="modalType === 'bundles'">
-            <div class="space-y-4">
-              <div class="flex bg-gray-100 rounded-xl p-1">
-                <button @click="bundleTab = 'data'" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition"
-                  :class="bundleTab === 'data' ? 'bg-white text-[#009639] shadow-sm' : 'text-gray-500'">Data</button>
-                <button @click="bundleTab = 'minutes'" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition"
-                  :class="bundleTab === 'minutes' ? 'bg-white text-[#009639] shadow-sm' : 'text-gray-500'">Minutes</button>
-                <button @click="bundleTab = 'tunukiwa'" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition"
-                  :class="bundleTab === 'tunukiwa' ? 'bg-white text-[#009639] shadow-sm' : 'text-gray-500'">Tunukiwa</button>
-              </div>
-              <div class="grid grid-cols-2 gap-2.5">
-                <template x-for="bundle in filteredBundles" :key="bundle.id">
-                  <button @click="selectedBundle = bundle.id" 
-                    class="rounded-xl p-3.5 text-left border transition"
-                    :class="selectedBundle === bundle.id ? 'border-[#009639] bg-green-50' : 'border-gray-200 bg-gray-50'">
-                    <div class="text-sm font-bold text-gray-800" x-text="bundle.label"></div>
-                    <div class="text-[11px] text-gray-400 mt-0.5" x-text="bundle.desc"></div>
-                    <div class="text-xs font-bold text-[#009639] mt-1.5">KES <span x-text="bundle.price"></span></div>
-                  </button>
-                </template>
-              </div>
-              <button @click="confirmBundle" :disabled="!selectedBundle"
-                class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition disabled:opacity-40"
-                :class="selectedBundle ? 'saf-gradient hover:shadow-lg active:scale-[0.98]' : 'bg-gray-300'">
-                Buy Bundle
-              </button>
-            </div>
-          </template>
-
-          <!-- Top Up Airtime -->
-          <template x-if="modalType === 'airtime'">
-            <div class="space-y-4">
-              <div class="flex bg-gray-100 rounded-xl p-1">
-                <button @click="airtimeTab = 'self'" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition"
-                  :class="airtimeTab === 'self' ? 'bg-white text-[#009639] shadow-sm' : 'text-gray-500'">My Number</button>
-                <button @click="airtimeTab = 'other'" class="flex-1 py-2.5 rounded-lg text-xs font-bold transition"
-                  :class="airtimeTab === 'other' ? 'bg-white text-[#009639] shadow-sm' : 'text-gray-500'">Other Number</button>
-              </div>
-              <template x-if="airtimeTab === 'other'">
-                <div>
-                  <label class="text-xs font-semibold text-gray-500 block mb-1.5">Phone Number</label>
-                  <div class="relative">
-                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">+254</span>
-                    <input type="tel" x-model="airtimeForm.phone" placeholder="712 345 678" maxlength="9"
-                      class="w-full pl-14 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-                  </div>
-                </div>
-              </template>
-              <div>
-                <label class="text-xs font-semibold text-gray-500 block mb-1.5">Amount (KES)</label>
-                <input type="number" x-model="airtimeForm.amount" placeholder="0.00" min="1"
-                  class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-              </div>
-              <div class="flex gap-2">
-                <template x-for="amt in [10, 20, 50, 100]" :key="amt">
-                  <button @click="airtimeForm.amount = amt" 
-                    class="flex-1 py-2.5 rounded-xl text-xs font-semibold border transition"
-                    :class="airtimeForm.amount == amt ? 'bg-[#009639] text-white border-[#009639]' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'">
-                    KES <span x-text="amt"></span>
-                  </button>
-                </template>
-              </div>
-              <button @click="confirmAirtime" :disabled="!airtimeForm.amount || (airtimeTab === 'other' && !airtimeForm.phone)"
-                class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition disabled:opacity-40"
-                :class="airtimeForm.amount && (airtimeTab === 'self' || airtimeForm.phone) ? 'saf-gradient hover:shadow-lg active:scale-[0.98]' : 'bg-gray-300'">
-                Buy KES <span x-text="Number(airtimeForm.amount).toLocaleString()"></span> Airtime
-              </button>
-            </div>
-          </template>
-
-        </div>
-      </div>
     </div>
   </template>
 
   <!-- ===== ADD SUBSCRIPTION MODAL ===== -->
-  <template x-if="showSubModal">
-    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-overlay" @click.self="showSubModal = false">
-      <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg shadow-2xl anim-slide-up" @click.stop>
-        <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+  <template x-if="showAddSubModal">
+    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-overlay" @click.self="showAddSubModal = false">
+      <div class="bg-[#1a1d24] rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl anim-slide-up border border-white/10" @click.stop>
+        <div class="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-blue-50">
-              <i data-lucide="credit-card" class="w-5 h-5 text-blue-600"></i>
-            </div>
-            <div>
-              <div class="font-bold text-gray-800 text-sm">Add Subscription</div>
-              <div class="text-[10px] text-gray-400">Track a new recurring expense</div>
-            </div>
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-[#5b6df0]/10"><i data-lucide="credit-card" class="w-5 h-5 text-[#5b6df0]"></i></div>
+            <div><div class="font-bold text-white text-sm">Add Subscription</div><div class="text-[10px] text-gray-400">Track a new recurring expense</div></div>
           </div>
-          <button @click="showSubModal = false" class="p-1.5 hover:bg-gray-100 rounded-full transition">
-            <i data-lucide="x" class="w-5 h-5 text-gray-400"></i>
-          </button>
+          <button @click="showAddSubModal = false" class="p-1.5 hover:bg-white/10 rounded-full transition"><i data-lucide="x" class="w-5 h-5 text-gray-400"></i></button>
         </div>
-        <div class="p-5 space-y-4">
-          <div>
-            <label class="text-xs font-semibold text-gray-500 block mb-1.5">Service Name</label>
-            <input type="text" x-model="subForm.name" placeholder="e.g. Netflix, Spotify"
-              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
+        <form @submit.prevent="addSubscriptionFromModal" class="p-5 space-y-3">
+          <div><label class="text-xs font-medium text-gray-400 block mb-1">Name</label><input type="text" x-model="subForm.name" placeholder="e.g. Netflix" class="w-full px-3 py-2.5 text-sm"></div>
+          <div><label class="text-xs font-medium text-gray-400 block mb-1">Amount</label><input type="number" x-model="subForm.amount" placeholder="0.00" min="0" step="0.01" class="w-full px-3 py-2.5 text-sm"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-medium text-gray-400 block mb-1">Currency</label><select x-model="subForm.currency" class="w-full px-3 py-2.5 text-sm"><option value="KES">KES</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select></div>
+            <div><label class="text-xs font-medium text-gray-400 block mb-1">Billing Day</label><input type="number" x-model="subForm.billing_day" min="1" max="31" class="w-full px-3 py-2.5 text-sm"></div>
           </div>
-          <div>
-            <label class="text-xs font-semibold text-gray-500 block mb-1.5">Amount (KES/month)</label>
-            <input type="number" x-model="subForm.amount" placeholder="0.00" min="1"
-              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition">
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-gray-500 block mb-1.5">Billing Cycle</label>
-            <select x-model="subForm.cycle"
-              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition appearance-none">
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly (every 3 months)</option>
-              <option value="yearly">Yearly</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs font-semibold text-gray-500 block mb-1.5">Category</label>
-            <select x-model="subForm.category"
-              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#009639]/30 focus:border-[#009639] transition appearance-none">
-              <option value="Entertainment">Entertainment</option>
-              <option value="Internet">Internet / Wi-Fi</option>
-              <option value="Insurance">Insurance</option>
-              <option value="Cloud Storage">Cloud Storage</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <button @click="addSubscription" :disabled="!subForm.name || !subForm.amount"
-            class="w-full py-3.5 rounded-xl font-bold text-sm text-white transition disabled:opacity-40"
-            :class="subForm.name && subForm.amount ? 'saf-gradient hover:shadow-lg active:scale-[0.98]' : 'bg-gray-300'">
-            Add to Tracker
-          </button>
-        </div>
-      </div>
-    </div>
-  </template>
-
-  <!-- ===== PIN MODAL ===== -->
-  <template x-if="showPinModal">
-    <div class="fixed inset-0 z-50 flex items-center justify-center modal-overlay" @click.self="showPinModal = false">
-      <div class="bg-white rounded-2xl w-[320px] shadow-2xl anim-fade-in p-6" @click.stop>
-        <div class="text-center mb-5">
-          <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Hakikisha — Enter PIN</div>
-          <div class="text-lg font-bold text-gray-800 mt-1" x-text="'KES ' + pendingAmount.toLocaleString()"></div>
-          <div class="text-sm text-gray-500" x-text="'to ' + pendingRecipient"></div>
-        </div>
-        <div class="flex justify-center gap-3 mb-5">
-          <template x-for="i in 4" :key="i">
-            <div class="w-4 h-4 rounded-full border-2 transition" :class="pin.length >= i ? 'border-[#009639] bg-[#009639]' : 'border-gray-300'"></div>
-          </template>
-        </div>
-        <div class="grid grid-cols-3 gap-2.5">
-          <template x-for="n in [1,2,3,4,5,6,7,8,9]" :key="n">
-            <button @click="pinInput(n)" class="py-3.5 rounded-xl text-lg font-bold text-gray-800 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition"> <span x-text="n"></span> </button>
-          </template>
-          <button @click="pinInput('clear')" class="py-3.5 rounded-xl text-xs font-semibold text-gray-500 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition">Clear</button>
-          <button @click="pinInput(0)" class="py-3.5 rounded-xl text-lg font-bold text-gray-800 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition">0</button>
-          <button @click="pinSubmit" class="py-3.5 rounded-xl text-xs font-bold text-white saf-gradient hover:shadow-lg transition" :class="pin.length < 4 ? 'opacity-40' : ''">OK</button>
-        </div>
-      </div>
-    </div>
-  </template>
-
-  <!-- ===== RECEIPT MODAL ===== -->
-  <template x-if="showReceipt">
-    <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center modal-overlay" @click.self="showReceipt = false">
-      <div class="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-lg shadow-2xl p-6 anim-slide-up" @click.stop>
-        <div class="text-center mb-5">
-          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <i data-lucide="check-circle" class="w-9 h-9 text-[#009639]"></i>
-          </div>
-          <div class="text-lg font-bold text-gray-800">Transaction Successful</div>
-          <div class="text-[11px] text-gray-400 mt-0.5">Hakikisha confirmed</div>
-        </div>
-        <div class="bg-gray-50 rounded-xl p-4 space-y-2.5 mb-5">
-          <div class="flex justify-between text-sm" x-show="receiptData.type">
-            <span class="text-gray-500">Type</span>
-            <span class="font-semibold text-gray-800 capitalize" x-text="receiptData.type"></span>
-          </div>
-          <div class="flex justify-between text-sm" x-show="receiptData.to">
-            <span class="text-gray-500">To</span>
-            <span class="font-semibold text-gray-800" x-text="receiptData.to"></span>
-          </div>
-          <div class="flex justify-between text-sm" x-show="receiptData.amount">
-            <span class="text-gray-500">Amount</span>
-            <span class="font-bold text-gray-800" x-text="'KES ' + Number(receiptData.amount).toLocaleString()"></span>
-          </div>
-          <div class="flex justify-between text-sm" x-show="receiptData.reference">
-            <span class="text-gray-500">Ref</span>
-            <span class="font-mono text-xs font-semibold text-gray-800" x-text="receiptData.reference"></span>
-          </div>
-          <div class="flex justify-between text-sm" x-show="receiptData.fee">
-            <span class="text-gray-500">Fee</span>
-            <span class="font-semibold text-gray-800" x-text="'KES ' + receiptData.fee"></span>
-          </div>
-          <div class="flex justify-between text-sm" x-show="receiptData.balance">
-            <span class="text-gray-500">New Balance</span>
-            <span class="font-bold text-[#009639]" x-text="'KES ' + Number(receiptData.balance).toLocaleString()"></span>
-          </div>
-        </div>
-        <button @click="closeAllModals" class="w-full py-3.5 rounded-xl font-bold text-sm text-white saf-gradient hover:shadow-lg active:scale-[0.98] transition">Done</button>
+          <div><label class="text-xs font-medium text-gray-400 block mb-1">FX Rate to KES (optional)</label><input type="number" x-model="subForm.fx_rate" min="0" step="0.01" class="w-full px-3 py-2.5 text-sm"></div>
+          <button type="submit" :disabled="!subForm.name || !subForm.amount" class="w-full py-3 rounded-xl text-sm font-bold text-white btn-primary transition disabled:opacity-40">Add to Tracker</button>
+        </form>
       </div>
     </div>
   </template>
@@ -568,296 +336,215 @@
 <script>
 function appState() {
   return {
-    // Tab
-    activeTab: 'actions',
+    API_URL: 'http://127.0.0.1:8000',
+    token: localStorage.getItem('token') || '',
+    username: localStorage.getItem('username') || '',
+    loading: false,
+    apiError: '',
+    authTab: 'login',
+    authForm: { username: '', password: '', confirm: '' },
+    authError: '',
 
-    // Balance
-    showBalance: true,
-    mpesaBalance: 4520,
-    airtimeBalance: 124,
-    dataBalance: 3.2,
-    bongaPoints: 2480,
-
-    // Modal state
-    showModal: false,
-    showPinModal: false,
-    showReceipt: false,
-    showSubModal: false,
-    modalType: null,
-    pin: '',
-    pendingAction: null,
-    pendingAmount: 0,
-    pendingRecipient: '',
-
-    receiptData: {},
-
-    // Quick Actions
-    quickActions: [
-      { id: 'send',    label: 'Send Money',        sub: 'To any M-PESA number',    icon: 'send',       bg: '#e8f5e9', color: '#009639' },
-      { id: 'lipa',    label: 'Lipa Na M-PESA',    sub: 'Buy goods or Paybill',     icon: 'shopping-cart', bg: '#fff3e0', color: '#e65100' },
-      { id: 'bundles', label: 'Buy Bundles',       sub: 'Data, mins & Tunukiwa',    icon: 'wifi',       bg: '#e3f2fd', color: '#1565c0' },
-      { id: 'airtime', label: 'Top Up Airtime',    sub: 'My number or other',       icon: 'smartphone', bg: '#fce4ec', color: '#c62828' },
+    tabs: [
+      { id: 'transactions', label: 'Transactions' },
+      { id: 'subscriptions', label: 'Subscriptions' },
+      { id: 'refunds', label: 'Refunds' },
+      { id: 'parse', label: 'Parse Alert' },
+      { id: 'ingest', label: 'Ingest Alert' },
     ],
+    activeTab: 'transactions',
 
-    currentAction: { icon: 'send', label: '', sub: '', bg: '', color: '' },
-
-    // Form state
-    sendForm: { phone: '', amount: '' },
-    lipaForm: { till: '', paybill: '', account: '', amount: '' },
-    airtimeForm: { phone: '', amount: '' },
-    lipaTab: 'till',
-    bundleTab: 'data',
-    airtimeTab: 'self',
-    selectedBundle: null,
-    bundles: [],
-
-    // Subscription form
-    subForm: { name: '', amount: '', cycle: 'monthly', category: 'Entertainment' },
-
-    // Subscriptions
+    summary: { transaction_count: 0, total_debits: 0, total_credits: 0, pending_refunds: 0, pending_refund_value: 0, next_30_day_subscription_total: 0 },
+    transactions: [],
     subscriptions: [],
+    refunds: [],
+    runway: [],
 
-    // Transactions
-    recentTransactions: [],
-    txnIdCounter: 5,
-    subIdCounter: 4,
+    txnSearch: '',
+    txnDirection: '',
+    txnStatus: '',
+
+    parseText: '',
+    parseResult: null,
+    parseError: '',
+
+    ingestText: '',
+    ingestResult: null,
+    ingestError: '',
+    ingesting: false,
+
+    showAddSubModal: false,
+    subForm: { name: '', amount: '', currency: 'KES', billing_day: 1, fx_rate: 1 },
 
     init() {
-      this.loadBundles();
-      this.loadSubscriptions();
-      this.loadTransactions();
-      document.addEventListener('alpine:init', () => { lucide.createIcons(); });
-      this.$nextTick(() => { lucide.createIcons(); });
-      this.$watch('showModal', () => { this.$nextTick(() => { lucide.createIcons(); }); });
-      this.$watch('showPinModal', () => { this.$nextTick(() => { lucide.createIcons(); }); });
-      this.$watch('showReceipt', () => { this.$nextTick(() => { lucide.createIcons(); }); });
-      this.$watch('showSubModal', () => { this.$nextTick(() => { lucide.createIcons(); }); });
-      this.$watch('activeTab', () => { this.$nextTick(() => { lucide.createIcons(); }); });
-    },
-
-    // ===== COMPUTED =====
-    get filteredBundles() {
-      return this.bundles.filter(b => b.type === this.bundleTab);
-    },
-
-    get monthlyCommitment() {
-      return this.subscriptions.reduce((sum, s) => sum + (s.status !== 'paused' ? s.amount : 0), 0);
-    },
-
-    get activeSubCount() {
-      return this.subscriptions.filter(s => s.status !== 'paused').length;
-    },
-
-    get dueThisWeek() {
-      return this.subscriptions.filter(s => s.daysLeft <= 7 && s.status !== 'paused').length;
-    },
-
-    get avgPerSub() {
-      const active = this.subscriptions.filter(s => s.status !== 'paused');
-      if (!active.length) return 0;
-      return Math.round(this.monthlyCommitment / active.length);
-    },
-
-    get nextDueName() {
-      const upcoming = this.subscriptions.filter(s => s.status !== 'paused').sort((a, b) => a.daysLeft - b.daysLeft);
-      return upcoming.length ? upcoming[0].name : '—';
-    },
-
-    get nextDueDays() {
-      const upcoming = this.subscriptions.filter(s => s.status !== 'paused').sort((a, b) => a.daysLeft - b.daysLeft);
-      return upcoming.length ? upcoming[0].daysLeft : '—';
-    },
-
-    get nextDueAmount() {
-      const upcoming = this.subscriptions.filter(s => s.status !== 'paused').sort((a, b) => a.daysLeft - b.daysLeft);
-      return upcoming.length ? upcoming[0].amount : 0;
-    },
-
-    // ===== DATA LOADING =====
-    loadBundles() {
-      this.bundles = [
-        { id: 'd1', label: '1 GB', desc: '30 days validity', price: 300, type: 'data' },
-        { id: 'd2', label: '3 GB', desc: '30 days validity', price: 500, type: 'data' },
-        { id: 'd3', label: '10 GB', desc: '30 days validity', price: 1000, type: 'data' },
-        { id: 'd4', label: '20 GB', desc: '30 days validity', price: 1500, type: 'data' },
-        { id: 'm1', label: '30 Mins', desc: 'All network, 1 day', price: 99, type: 'minutes' },
-        { id: 'm2', label: '100 Mins', desc: 'All network, 7 days', price: 299, type: 'minutes' },
-        { id: 'm3', label: '300 Mins', desc: 'All network, 30 days', price: 799, type: 'minutes' },
-        { id: 't1', label: '1GB + 30Mins', desc: 'Tunukiwa daily', price: 350, type: 'tunukiwa' },
-        { id: 't2', label: '3GB + 100Mins', desc: 'Tunukiwa weekly', price: 599, type: 'tunukiwa' },
-        { id: 't3', label: '10GB + 300Mins', desc: 'Tunukiwa monthly', price: 1299, type: 'tunukiwa' },
-      ];
-    },
-
-    loadSubscriptions() {
-      const today = new Date();
-      const toDate = (d) => d.toLocaleDateString('en-KE', { month: 'short', day: 'numeric' });
-
-      const d1 = new Date(today); d1.setDate(d1.getDate() + 5);
-      const d2 = new Date(today); d2.setDate(d2.getDate() + 12);
-      const d3 = new Date(today); d3.setDate(d3.getDate() + 2);
-      const d4 = new Date(today); d4.setDate(d4.getDate() + 18);
-
-      this.subscriptions = [
-        {
-          id: 1, name: 'YouTube Premium (Family)', amount: 1350, icon: 'YT', bg: '#fce4ec', color: '#c62828',
-          category: 'Entertainment', status: 'active', daysLeft: 5, nextDate: toDate(d1), progress: 83,
-        },
-        {
-          id: 2, name: 'Apple Music', amount: 450, icon: 'AM', bg: '#fce4ec', color: '#d32f2f',
-          category: 'Entertainment', status: 'due_soon', daysLeft: 2, nextDate: toDate(d3), progress: 93,
-        },
-        {
-          id: 3, name: 'Zuku Fiber Internet', amount: 3500, icon: 'ZF', bg: '#e3f2fd', color: '#1565c0',
-          category: 'Internet', status: 'active', daysLeft: 12, nextDate: toDate(d2), progress: 60,
-        },
-        {
-          id: 4, name: 'Netflix Mobile', amount: 1100, icon: 'N', bg: '#fce4ec', color: '#b71c1c',
-          category: 'Entertainment', status: 'active', daysLeft: 18, nextDate: toDate(d4), progress: 40,
-        },
-      ];
-    },
-
-    loadTransactions() {
-      this.recentTransactions = [
-        { id: 1, type: 'send', icon: 'arrow-up-right', title: 'Sent to John K.', amount: 1500, date: 'Today, 2:30 PM', status: 'Completed' },
-        { id: 2, type: 'receive', icon: 'arrow-down-left', title: 'Received from Mary W.', amount: 3200, date: 'Today, 11:15 AM', status: 'Completed' },
-        { id: 3, type: 'bundle', icon: 'wifi', title: 'Data Bundle - 1GB', amount: 300, date: 'Yesterday, 6:00 PM', status: 'Completed' },
-        { id: 4, type: 'send', icon: 'shopping-cart', title: 'Lipa - Quickmart Juja', amount: 845, date: 'Yesterday, 4:20 PM', status: 'Completed' },
-      ];
-    },
-
-    // ===== MODAL CONTROLS =====
-    openModal(type) {
-      this.modalType = type;
-      this.currentAction = this.quickActions.find(a => a.id === type) || this.currentAction;
-      this.showModal = true;
-    },
-
-    closeModal() {
-      this.showModal = false;
-      this.resetForms();
-    },
-
-    resetForms() {
-      this.sendForm = { phone: '', amount: '' };
-      this.lipaForm = { till: '', paybill: '', account: '', amount: '' };
-      this.airtimeForm = { phone: '', amount: '' };
-      this.lipaTab = 'till';
-      this.bundleTab = 'data';
-      this.airtimeTab = 'self';
-      this.selectedBundle = null;
-    },
-
-    openSubModal() {
-      this.subForm = { name: '', amount: '', cycle: 'monthly', category: 'Entertainment' };
-      this.showSubModal = true;
-    },
-
-    addSubscription() {
-      if (!this.subForm.name || !this.subForm.amount) return;
-      const today = new Date();
-      const due = new Date(today); due.setDate(due.getDate() + 25);
-      const iconLabel = this.subForm.name.split(/\s+/).map(w => w[0]).join('').substring(0, 2).toUpperCase();
-      const catColors = { Entertainment: { bg: '#fce4ec', color: '#c62828' }, Internet: { bg: '#e3f2fd', color: '#1565c0' }, Insurance: { bg: '#fff3e0', color: '#e65100' }, 'Cloud Storage': { bg: '#e8f5e9', color: '#009639' }, Other: { bg: '#f3e5f5', color: '#7b1fa2' } };
-      const color = catColors[this.subForm.category] || { bg: '#f3e5f5', color: '#7b1fa2' };
-
-      this.subscriptions.push({
-        id: this.subIdCounter++,
-        name: this.subForm.name,
-        amount: Number(this.subForm.amount),
-        icon: iconLabel,
-        bg: color.bg,
-        color: color.color,
-        category: this.subForm.category,
-        status: 'active',
-        daysLeft: 25,
-        nextDate: due.toLocaleDateString('en-KE', { month: 'short', day: 'numeric' }),
-        progress: 17,
-      });
-
-      this.showSubModal = false;
-      this.subForm = { name: '', amount: '', cycle: 'monthly', category: 'Entertainment' };
-    },
-
-    // ===== PIN & ACTIONS =====
-    confirmSend() {
-      this.pendingAction = 'send';
-      this.pendingAmount = Number(this.sendForm.amount);
-      this.pendingRecipient = '07' + this.sendForm.phone;
-      this.showModal = false;
-      this.$nextTick(() => { this.showPinModal = true; lucide.createIcons(); });
-    },
-
-    confirmLipa() {
-      this.pendingAction = 'lipa';
-      this.pendingAmount = Number(this.lipaForm.amount);
-      this.pendingRecipient = this.lipaTab === 'till' ? 'Till ' + this.lipaForm.till : 'Paybill ' + this.lipaForm.paybill;
-      this.showModal = false;
-      this.$nextTick(() => { this.showPinModal = true; lucide.createIcons(); });
-    },
-
-    confirmBundle() {
-      const bundle = this.bundles.find(b => b.id === this.selectedBundle);
-      this.pendingAction = 'bundle';
-      this.pendingAmount = Number(bundle.price);
-      this.pendingRecipient = bundle.label;
-      this.showModal = false;
-      this.$nextTick(() => { this.showPinModal = true; lucide.createIcons(); });
-    },
-
-    confirmAirtime() {
-      this.pendingAction = 'airtime';
-      this.pendingAmount = Number(this.airtimeForm.amount);
-      this.pendingRecipient = this.airtimeTab === 'self' ? 'My Number' : '07' + this.airtimeForm.phone;
-      this.showModal = false;
-      this.$nextTick(() => { this.showPinModal = true; lucide.createIcons(); });
-    },
-
-    pinInput(val) {
-      if (val === 'clear') { this.pin = ''; return; }
-      if (this.pin.length < 4) this.pin += val;
-    },
-
-    pinSubmit() {
-      if (this.pin.length < 4) return;
-      this.showPinModal = false;
-      this.pin = '';
-      this.executeAction();
-    },
-
-    executeAction() {
-      const ref = 'QF' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      const fee = this.pendingAmount >= 1000 ? 35 : 0;
-      const total = this.pendingAmount + fee;
-      this.mpesaBalance -= total;
-      this.mpesaBalance = Math.max(0, this.mpesaBalance);
-
-      const txn = { id: this.txnIdCounter++, type: 'send', icon: 'arrow-up-right', title: '', amount: this.pendingAmount, date: 'Just now', status: 'Completed' };
-
-      this.receiptData = {
-        type: this.pendingAction === 'send' ? 'Send Money' : this.pendingAction === 'lipa' ? 'Lipa Na M-PESA' : this.pendingAction === 'bundle' ? 'Bundle Purchase' : 'Airtime Top Up',
-        to: this.pendingRecipient, amount: this.pendingAmount, reference: ref, fee: fee, balance: this.mpesaBalance,
-      };
-
-      switch(this.pendingAction) {
-        case 'send':    txn.title = 'Sent to ' + this.pendingRecipient; break;
-        case 'lipa':    txn.title = 'Paid to ' + this.pendingRecipient; txn.icon = 'shopping-cart'; break;
-        case 'bundle':  txn.title = 'Bundle - ' + this.pendingRecipient; txn.icon = 'wifi'; break;
-        case 'airtime': txn.title = 'Airtime - ' + this.pendingRecipient; this.airtimeBalance += this.pendingAmount; break;
+      if (this.token) {
+        this.loadData();
       }
-
-      this.recentTransactions.unshift(txn);
-      this.$nextTick(() => { this.showReceipt = true; lucide.createIcons(); });
     },
 
-    closeAllModals() {
-      this.showReceipt = false;
-      this.showPinModal = false;
-      this.showModal = false;
-      this.showSubModal = false;
-      this.pin = '';
-      this.resetForms();
+    getHeaders() {
+      return this.token ? { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+    },
+
+    formatNum(n) {
+      if (n == null) return '0';
+      return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    },
+
+    ordinal(n) {
+      if (n == null) return '';
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    },
+
+    get filteredTransactions() {
+      let items = this.transactions;
+      if (this.txnSearch) {
+        const q = this.txnSearch.toLowerCase();
+        items = items.filter(t => (t.merchant || '').toLowerCase().includes(q) || (t.reference || '').toLowerCase().includes(q));
+      }
+      if (this.txnDirection) items = items.filter(t => t.direction === this.txnDirection);
+      if (this.txnStatus) items = items.filter(t => t.status === this.txnStatus);
+      return items;
+    },
+
+    async apiGet(path) {
+      const r = await fetch(this.API_URL + path, { headers: this.getHeaders() });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Request failed'); }
+      return r.json();
+    },
+
+    async apiPost(path, body) {
+      const r = await fetch(this.API_URL + path, { method: 'POST', headers: this.getHeaders(), body: body ? JSON.stringify(body) : undefined });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || 'Request failed'); }
+      return r.json();
+    },
+
+    async login() {
+      this.authError = '';
+      try {
+        const resp = await this.apiPost('/auth/login', { username: this.authForm.username, password: this.authForm.password });
+        this.token = resp.access_token;
+        this.username = this.authForm.username;
+        localStorage.setItem('token', this.token);
+        localStorage.setItem('username', this.username);
+        this.authForm = { username: '', password: '', confirm: '' };
+        this.loadData();
+      } catch (e) {
+        this.authError = e.message || 'Login failed';
+      }
+    },
+
+    async register() {
+      this.authError = '';
+      if (this.authForm.password !== this.authForm.confirm) { this.authError = 'Passwords do not match'; return; }
+      if (this.authForm.password.length < 6) { this.authError = 'Password must be at least 6 characters'; return; }
+      try {
+        await this.apiPost('/auth/register', { username: this.authForm.username, password: this.authForm.password });
+        this.authError = '';
+        this.authTab = 'login';
+        this.authForm = { username: this.authForm.username, password: '', confirm: '' };
+      } catch (e) {
+        this.authError = e.message || 'Registration failed';
+      }
+    },
+
+    logout() {
+      this.token = '';
+      this.username = '';
+      localStorage.removeItem('token');
+      localStorage.removeItem('username');
+    },
+
+    async loadData() {
+      this.loading = true;
+      this.apiError = '';
+      try {
+        const [summary, transactions, subscriptions, refunds, runway] = await Promise.all([
+          this.apiGet('/summary'),
+          this.apiGet('/transactions'),
+          this.apiGet('/subscriptions'),
+          this.apiGet('/refunds'),
+          this.apiGet('/runway'),
+        ]);
+        this.summary = summary;
+        this.transactions = transactions;
+        this.subscriptions = subscriptions;
+        this.refunds = refunds;
+        this.runway = runway;
+      } catch (e) {
+        if (e.message.includes('401') || e.message.includes('Unauthorized')) {
+          this.logout();
+        } else {
+          this.apiError = 'Failed to load data: ' + e.message + '. Make sure the FastAPI server is running on port 8000.';
+        }
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async refreshData() {
+      this.ingestResult = null;
+      this.ingestError = '';
+      this.parseResult = null;
+      this.parseError = '';
+      await this.loadData();
+    },
+
+    async markRefund(txnId) {
+      try {
+        await this.apiPost('/transactions/' + txnId + '/refund', null);
+        await this.loadData();
+      } catch (e) {
+        this.apiError = e.message || 'Failed to mark refund';
+      }
+    },
+
+    async addSubscription() {
+      try {
+        await this.apiPost('/subscriptions', {
+          name: this.subForm.name,
+          amount: parseFloat(this.subForm.amount),
+          currency: this.subForm.currency,
+          billing_day: parseInt(this.subForm.billing_day),
+          fx_rate: this.subForm.fx_rate ? parseFloat(this.subForm.fx_rate) : null,
+        });
+        this.subForm = { name: '', amount: '', currency: 'KES', billing_day: 1, fx_rate: 1 };
+        await this.loadData();
+      } catch (e) {
+        this.apiError = e.message || 'Failed to add subscription';
+      }
+    },
+
+    addSubscriptionFromModal() {
+      this.showAddSubModal = false;
+      this.addSubscription();
+    },
+
+    async previewParse() {
+      this.parseResult = null;
+      this.parseError = '';
+      try {
+        this.parseResult = await this.apiPost('/parse', { raw_text: this.parseText });
+      } catch (e) {
+        this.parseError = e.message || 'Failed to parse alert';
+      }
+    },
+
+    async ingestAlert() {
+      this.ingestResult = null;
+      this.ingestError = '';
+      this.ingesting = true;
+      try {
+        this.ingestResult = await this.apiPost('/transactions/ingest', { raw_text: this.ingestText });
+        this.ingestText = '';
+        this.loadData();
+      } catch (e) {
+        this.ingestError = e.message || 'Failed to ingest alert';
+      } finally {
+        this.ingesting = false;
+      }
     },
   };
 }
