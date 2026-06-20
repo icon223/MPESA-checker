@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPC Dialogue Sandbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top right, #1e1b4b, #090514);
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #1e1b4b;
+            border-radius: 9999px;
+            height: 6px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #818cf8;
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.1s ease;
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #a5b4fc;
+        }
+        #chatFeed::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chatFeed::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        #chatFeed::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        #chatFeed::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500/30">
+
+    <header class="border-b border-slate-800/60 bg-slate-950/40 backdrop-blur-md px-8 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-400">
+                <i data-lucide="cpu" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-bold tracking-tight text-slate-100 flex items-center gap-2">
+                    NPC Dialogue Sandbox <span class="text-xs bg-indigo-500/20 text-indigo-300 font-medium px-2 py-0.5 rounded-full border border-indigo-500/30">v1.0 BETA</span>
+                </h1>
+                <p class="text-xs text-slate-400">Design, test, and tune dynamic game states in real-time</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="exportJSON()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all duration-200">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> Export Config
+            </button>
+            <button onclick="clearChat()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all duration-200">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset Sandbox
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden max-w-[1800px] w-full mx-auto p-6 gap-6">
+        
+        <section class="lg:col-span-5 flex flex-col gap-5 overflow-y-auto pr-1">
+            
+            <div class="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
+                <div class="flex items-center gap-2 mb-4 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                    <i data-lucide="user" class="w-4 h-4 text-indigo-400"></i> Character Configuration
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Character Name</label>
+                        <input id="npcName" type="text" value="Garrick the Blacksmith" oninput="updatePrompt()"
+                            class="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500/50 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Core Personality & Knowledge Context</label>
+                        <textarea id="npcCore" rows="3" oninput="updatePrompt()"
+                            class="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500/50 transition-colors resize-none">A grumpy but highly skilled blacksmith who hates casual small talk. He secretly knows where the legendary Dragon Sword is hidden but refuses to tell anyone he doesn't completely trust.</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
+                <div class="flex items-center gap-2 mb-4 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                    <i data-lucide="sliders" class="w-4 h-4 text-emerald-400"></i> Live Dynamic Variables
+                </div>
+                
+                <div class="space-y-5">
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <span class="text-slate-300">Friendliness / Trust</span>
+                            <span id="friendVal" class="text-indigo-400 font-bold">0.3</span>
+                        </div>
+                        <input id="friendSlider" type="range" min="0" max="1" step="0.1" value="0.3" oninput="updateSliders()" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <span class="text-slate-300">Suspicion / Alertness</span>
+                            <span id="susVal" class="text-rose-400 font-bold">0.7</span>
+                        </div>
+                        <input id="susSlider" type="range" min="0" max="1" step="0.1" value="0.7" oninput="updateSliders()" class="w-full">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs font-medium mb-1.5">
+                            <span class="text-slate-300">Energy / Temper</span>
+                            <span id="energyVal" class="text-amber-400 font-bold">0.5</span>
+                        </div>
+                        <input id="energySlider" type="range" min="0" max="1" step="0.1" value="0.5" oninput="updateSliders()" class="w-full">
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-800/60">
+                    <div class="flex items-center justify-between text-xs mb-2">
+                        <span class="text-slate-400">Sentiment auto-adjust</span>
+                        <span id="sentimentDisplay" class="text-slate-500">—</span>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/60 text-slate-400">greeting</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/60 text-slate-400">insult</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/60 text-slate-400">threat</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/60 text-slate-400">request</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-950/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm flex-1 flex flex-col min-h-[200px]">
+                <div class="flex items-center gap-2 mb-3 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+                    <i data-lucide="terminal" class="w-4 h-4 text-purple-400"></i> Compiled AI System Prompt
+                </div>
+                <div id="compiledPrompt" class="mono text-xs p-3 bg-slate-900/40 border border-slate-800/50 rounded-xl text-slate-400 flex-1 whitespace-pre-wrap leading-relaxed select-all cursor-pointer hover:bg-slate-900/70 transition-colors overflow-y-auto">
+                </div>
+            </div>
+
+        </section>
+
+        <section class="lg:col-span-7 flex flex-col bg-slate-950/20 border border-slate-800/60 rounded-2xl backdrop-blur-sm overflow-hidden h-[calc(100vh-140px)]">
+            
+            <div class="px-5 py-3 border-b border-slate-800/60 bg-slate-950/40 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-semibold text-slate-300 tracking-wide uppercase">Dialogue Simulation Feed</span>
+                </div>
+                <div class="text-[10px] text-slate-500 mono" id="jsonExport">
+                </div>
+            </div>
+
+            <div id="chatFeed" class="flex-1 overflow-y-auto p-5 space-y-4 scroll-smooth">
+                <div class="flex gap-3 max-w-[85%] animate-fade-in">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                        <i data-lucide="bot" class="w-4 h-4"></i>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-2.5 text-sm text-slate-300 shadow-sm leading-relaxed">
+                        System pipeline ready. Adjust the sliders to shift character temperament, and message them below to see response logic shifts.
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-800/60 bg-slate-950/40">
+                <form id="chatForm" onsubmit="handleSendMessage(event)" class="relative flex items-center">
+                    <input id="userInput" type="text" placeholder="Type a message to test dialogue branches..." autocomplete="off"
+                        class="w-full bg-slate-900/80 border border-slate-800 focus:border-indigo-500/50 text-slate-100 rounded-xl pl-4 pr-12 py-3 text-sm focus:outline-none transition-all shadow-inner">
+                    <button type="submit" class="absolute right-2 p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-md active:scale-95">
+                        <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        const NPC = {
+            name: 'Garrick the Blacksmith',
+            core: '',
+            moods: { f: 0.3, s: 0.7, e: 0.5 },
+            history: []
+        };
+
+        function getMoodText() {
+            const { f, s, e } = NPC.moods;
+            const friendText = f > 0.6 ? "warm, receptive, and willing to share details" : f < 0.3 ? "incredibly cold, hostile, and tight-lipped" : "cautious and standard";
+            const susText = s > 0.6 ? "highly paranoid, analyzing everything with deep skepticism" : s < 0.3 ? "relaxed, completely trusting, dropping his shield" : "observant but quiet";
+            const energyText = e > 0.7 ? "boisterous, animated, and quick-tempered" : e < 0.3 ? "exhausted, speaking in low mumbles" : "stable and grounded";
+            return { friendText, susText, energyText };
+        }
+
+        function updatePrompt() {
+            NPC.name = document.getElementById('npcName').value || 'Unknown NPC';
+            NPC.core = document.getElementById('npcCore').value || '';
+            const { friendText, susText, energyText } = getMoodText();
+
+            const payload = `System Objective:\nYou are playing ${NPC.name}. ${NPC.core}\n\nLive State Modifiers:\n- Tone Profile: Acting ${friendText}.\n- Threat Assessment: Mentally feels ${susText}.\n- Energy State: Currently ${energyText}.\n\nFormatting Strategy:\nStay strictly in context. Limit execution paths to 1-3 crisp lines fit for a dialogue frame box. Do not output metadata.`;
+            
+            document.getElementById('compiledPrompt').innerText = payload;
+            document.getElementById('jsonExport').innerText = `DATA_STATE: { f: ${NPC.moods.f}, s: ${NPC.moods.s}, e: ${NPC.moods.e} }`;
+        }
+
+        function updateSliders() {
+            NPC.moods.f = parseFloat(document.getElementById('friendSlider').value);
+            NPC.moods.s = parseFloat(document.getElementById('susSlider').value);
+            NPC.moods.e = parseFloat(document.getElementById('energySlider').value);
+            document.getElementById('friendVal').innerText = NPC.moods.f;
+            document.getElementById('susVal').innerText = NPC.moods.s;
+            document.getElementById('energyVal').innerText = NPC.moods.e;
+            updatePrompt();
+        }
+
+        function sentimentAnalysis(text) {
+            const lower = text.toLowerCase();
+            const posWords = ['hello', 'hi', 'greetings', 'please', 'thanks', 'thank', 'friend', 'help', 'nice', 'good', 'great', 'wonderful', 'beautiful', 'love', 'kind', 'respect', 'pleasure'];
+            const negWords = ['die', 'kill', 'hate', 'stupid', 'ugly', 'terrible', 'awful', 'bad', 'evil', 'curse', 'pathetic', 'idiot', 'fool', 'scum', 'trash', 'disgusting'];
+            const aggWords = ['attack', 'fight', 'threaten', 'destroy', 'surrender', 'obey', 'submit', 'hand over'];
+
+            const words = lower.split(/\W+/).filter(w => w);
+            let pos = 0, neg = 0, agg = 0;
+            words.forEach(w => {
+                if (posWords.includes(w)) pos++;
+                if (negWords.includes(w)) neg++;
+                if (aggWords.includes(w)) agg++;
+            });
+
+            const total = pos + neg + agg;
+            if (total === 0) return { type: 'neutral', label: 'Neutral', delta: {} };
+
+            const score = (pos - neg - agg) / total;
+            let type = 'neutral', label = 'Neutral';
+            const delta = {};
+
+            if (score > 0.2) {
+                type = 'positive';
+                label = 'Friendly';
+                delta.f = 0.1;
+                delta.s = -0.05;
+            } else if (score < -0.2) {
+                type = 'negative';
+                label = 'Hostile';
+                delta.f = -0.15;
+                delta.s = 0.2;
+            }
+
+            if (agg / Math.max(total, 1) > 0.3) {
+                delta.f = (delta.f || 0) - 0.1;
+                delta.s = (delta.s || 0) + 0.15;
+                delta.e = 0.1;
+                label = 'Aggressive';
+            }
+
+            return { type, label, delta };
+        }
+
+        function getNPCResponse(input) {
+            const { f, s, e } = NPC.moods;
+            const lower = input.toLowerCase();
+
+            const greetings = ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good evening', 'sup', 'yo'];
+            const farewells = ['goodbye', 'bye', 'farewell', 'see you', 'later'];
+            const asks = ['tell me', 'what', 'where', 'who', 'why', 'how', 'know', 'secret', 'dragon sword', 'legendary', 'hidden'];
+            const threats = ['attack', 'kill', 'die', 'fight', 'hurt', 'destroy'];
+            const items = ['sword', 'weapon', 'armor', 'shield', 'item', 'buy', 'sell', 'trade', 'craft', 'forge'];
+
+            if (threats.some(t => lower.includes(t))) {
+                if (s > 0.5 || f < 0.4) {
+                    return '"You dare threaten me in my own forge? I\'ve forged weapons that could split you in half before you even blink. State your business or get out."';
+                }
+                return '"Ha! I\'ve seen a hundred braggarts like you. Put that away before you hurt yourself."';
+            }
+
+            if (greetings.some(g => lower.includes(g))) {
+                if (f < 0.3) return '"Tch. Another wanderer wasting my time. What do you want?"';
+                if (f > 0.6) return '"Well, well. A friendly face for once. Good day to you, traveler. What brings you to my forge?"';
+                return '"Hmph. Morning."';
+            }
+
+            if (farewells.some(fw => lower.includes(fw))) {
+                if (f > 0.5) return '"Safe travels. And uh... watch yourself on the north road. Things have been stirring."';
+                return '"Yeah, yeah. Don\'t let the door hit you."';
+            }
+
+            if (asks.some(a => lower.includes(a))) {
+                if (s > 0.6) return '"You ask too many questions for my liking. A man\'s knowledge is his coin, and I don\'t hand out charity."';
+                if (f > 0.6 && s < 0.4) return '"Heh... you\'ve got a good heart. Tell you what — ask me again when the moon is full. I might have... something to share."';
+                return '"I know a lot of things. Whether I tell you depends on whether I trust you. And right now? I don\'t."';
+            }
+
+            if (items.some(i => lower.includes(i))) {
+                if (e > 0.6) return '"NOW you\'re speaking my language. Take a look — finest steel in the realm. Touch the edge and I\'ll charge you for the blood."';
+                return '"I\'ve got some pieces in the back. Prices are on the tag. Don\'t haggle."';
+            }
+
+            const genericReplies = [
+                '"Look, I\'m a blacksmith, not a tavern bard. You want conversation, go to the Rusty Tankard."',
+                '"*grunts while working the bellows*"',
+                '"I don\'t get paid to stand around chatting. You need something forged or not?"',
+                '"You\'re blocking the light. Move."',
+                '"*wipes soot from his hands* What is it now?"',
+                '"Busy. Come back later."',
+                '"Hmph. You\'ve got nerve walking in here like you own the place."',
+            ];
+            return genericReplies[Math.floor(Math.random() * genericReplies.length)];
+        }
+
+        function addMessage(role, content) {
+            const feed = document.getElementById('chatFeed');
+            const isUser = role === 'user';
+            const icon = isUser ? 'user' : 'bot';
+            const align = isUser ? 'justify-end' : '';
+            const bg = isUser ? 'bg-indigo-600/20 border-indigo-500/30 ml-auto' : 'bg-slate-900/80 border-slate-800';
+            const iconBg = isUser ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400' : 'bg-slate-800/60 border-slate-700 text-slate-400';
+            const maxW = isUser ? 'max-w-[85%]' : 'max-w-[85%]';
+
+            const div = document.createElement('div');
+            div.className = `flex gap-3 ${maxW} animate-fade-in ${align}`;
+            
+            if (!isUser) {
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center shrink-0 border">
+                        <i data-lucide="${icon}" class="w-4 h-4"></i>
+                    </div>
+                    <div class="${bg} border rounded-2xl px-4 py-2.5 text-sm text-slate-300 shadow-sm leading-relaxed">
+                        ${content}
+                    </div>`;
+            } else {
+                div.innerHTML = `
+                    <div class="${bg} border rounded-2xl px-4 py-2.5 text-sm text-slate-300 shadow-sm leading-relaxed">
+                        ${content}
+                    </div>
+                    <div class="w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center shrink-0 border">
+                        <i data-lucide="${icon}" class="w-4 h-4"></i>
+                    </div>`;
+            }
+
+            feed.appendChild(div);
+            lucide.createIcons();
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function handleSendMessage(e) {
+            e.preventDefault();
+            const inputField = document.getElementById('userInput');
+            const text = inputField.value.trim();
+            if (!text) return;
+            inputField.value = '';
+
+            addMessage('user', text);
+            NPC.history.push({ role: 'user', content: text });
+
+            const analysis = sentimentAnalysis(text);
+            document.getElementById('sentimentDisplay').innerText = analysis.label;
+
+            const d = analysis.delta;
+            if (d.f) {
+                NPC.moods.f = Math.max(0, Math.min(1, NPC.moods.f + d.f));
+            }
+            if (d.s) {
+                NPC.moods.s = Math.max(0, Math.min(1, NPC.moods.s + d.s));
+            }
+            if (d.e) {
+                NPC.moods.e = Math.max(0, Math.min(1, NPC.moods.e + d.e));
+            }
+
+            document.getElementById('friendSlider').value = NPC.moods.f;
+            document.getElementById('susSlider').value = NPC.moods.s;
+            document.getElementById('energySlider').value = NPC.moods.e;
+            document.getElementById('friendVal').innerText = NPC.moods.f;
+            document.getElementById('susVal').innerText = NPC.moods.s;
+            document.getElementById('energyVal').innerText = NPC.moods.e;
+
+            const indicator = document.getElementById('sentimentDisplay');
+            if (analysis.label === 'Friendly') indicator.className = 'text-emerald-400 text-xs';
+            else if (analysis.label === 'Hostile' || analysis.label === 'Aggressive') indicator.className = 'text-rose-400 text-xs';
+            else indicator.className = 'text-slate-400 text-xs';
+
+            setTimeout(() => {
+                const reply = getNPCResponse(text);
+                addMessage('npc', reply);
+                NPC.history.push({ role: 'npc', content: reply });
+                updatePrompt();
+            }, 400 + Math.random() * 600);
+        }
+
+        function clearChat() {
+            const feed = document.getElementById('chatFeed');
+            feed.innerHTML = `
+                <div class="flex gap-3 max-w-[85%] animate-fade-in">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                        <i data-lucide="bot" class="w-4 h-4"></i>
+                    </div>
+                    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-2.5 text-sm text-slate-300 shadow-sm leading-relaxed">
+                        System pipeline ready. Adjust the sliders to shift character temperament, and message them below to see response logic shifts.
+                    </div>
+                </div>`;
+            NPC.history = [];
+            NPC.moods = { f: 0.3, s: 0.7, e: 0.5 };
+            document.getElementById('friendSlider').value = 0.3;
+            document.getElementById('susSlider').value = 0.7;
+            document.getElementById('energySlider').value = 0.5;
+            document.getElementById('friendVal').innerText = '0.3';
+            document.getElementById('susVal').innerText = '0.7';
+            document.getElementById('energyVal').innerText = '0.5';
+            document.getElementById('sentimentDisplay').innerText = '\u2014';
+            document.getElementById('sentimentDisplay').className = 'text-slate-500 text-xs';
+            lucide.createIcons();
+            updatePrompt();
+        }
+
+        function exportJSON() {
+            const config = {
+                name: NPC.name,
+                core: NPC.core,
+                moods: NPC.moods,
+                history: NPC.history,
+                exported: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${NPC.name.toLowerCase().replace(/\s+/g, '_')}_config.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        updatePrompt();
+    </script>
+</body>
+</html>
